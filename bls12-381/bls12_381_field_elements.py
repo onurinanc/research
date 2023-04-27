@@ -38,12 +38,12 @@ class FQ():
     def __div__(self, other):
         num = other.n if isinstance(other, FQ) else other
         assert isinstance(num, (int, long))
-        return FQ(self.n * inv(num, field_prime) % field_prime)
+        return FQ(self.n * num.inv())
 
     def __rdiv__(self, other):
         num = other.n if isinstance(other, FQ) else other
         assert isinstance(num, (int, long))
-        return FQ(inv(self.n, field_prime) * num % field_prime)
+        return FQ(self.inv() * num % field_prime)
 
     def __truediv__(self, other):
         return self.__div__(other)
@@ -68,6 +68,17 @@ class FQ():
 
     def mul_nonres(self):
         return FQ(self.n)
+
+    def inv(self):
+        if self.n == 0:
+            return 0
+        lm, hm = 1, 0
+        low, high = self.n % field_prime, field_prime
+        while low > 1:
+            r = high//low
+            nm, new = hm-lm*r, high-low*r
+            lm, low, hm, high = nm, new, lm, low
+        return lm % field_prime
 
 class FQ2():
     def __init__(self, u0, u1):
@@ -103,8 +114,9 @@ class FQ2():
     def mul_nonres(self):
         return FQ2(self.c0 - self.c1, self.c0 + self.c1)
 
-    def invFQ2(self):
-        factor = inv(self.c1.n * self.c1.n + self.c0.n + self.c0.n, field_prime)
+    def inv(self):
+        inverse_temp = self.c1 * self.c1 + self.c0 + self.c0
+        factor = inverse_temp.inv()
         return FQ2(self.c0 * factor, (-self.c1) * factor)
 
     def __eq__(self, other):
@@ -164,7 +176,7 @@ class FQ6():
     def mul_nonres(self):
         return FQ6(self.c2.mul_nonres(), self.c0, self.c1)
 
-    def invFQ6(self):
+    def inv(self):
         mul_nonres1 = self.c1 * self.c2
         mul_nonres2 = self.c2 * self.c2
         t0 = self.c0 * self.c1 - mul_nonres1.mul_nonres()
@@ -173,7 +185,7 @@ class FQ6():
         mul_nonres3 = self.c2 * t1
         mul_nonres4 = self.c1 * t2
         inverse_temp = self.c0 * t0 + mul_nonres3 + mul_nonres4
-        factor = inverse_temp.invFQ2()
+        factor = inverse_temp.inv()
         return FQ6(t0 * factor, t1 * factor, t2 * factor)
 
     def __eq__(self, other):
@@ -226,10 +238,10 @@ class FQ12():
     def mul_nonres(self):
         print("No need for FQ12!")
 
-    def invFQ12(self):
+    def inv(self):
         mul_nonres1 = self.c1 * self.c1
         inverse_temp = self.c0 * self.c0 - mul_nonres1.mul_nonres()
-        factor = inverse_temp.invFQ6()
+        factor = inverse_temp.inv()
         return FQ12(self.c0 * factor, -self.c1 * factor)
 
     def __eq__(self, other):
@@ -246,18 +258,6 @@ class FQ12():
     def __repr__(self):
         return "(" + self.c0.__str__() + "," + self.c1.__str__() + ")"
 
-
-# Extended Euclidean Algorithm to find an inverse of a field element
-def inv(a, n):
-    if a == 0:
-        return 0
-    lm, hm = 1, 0
-    low, high = a % n, n
-    while low > 1:
-        r = high//low
-        nm, new = hm-lm*r, high-low*r
-        lm, low, hm, high = nm, new, lm, low
-    return lm % n
 
 a = FQ(1)
 b = FQ(1)
@@ -290,7 +290,7 @@ print(res2)
 res3 = x - y
 print(res3)
 
-res4 = x.invFQ6()
+res4 = x.inv()
 print(res4)
 
 res5 = y.mul_nonres()
@@ -309,5 +309,5 @@ print(result1)
 result2 = zz - zy
 print(result2)
 
-result3 = zz.invFQ12()
+result3 = zz.inv()
 print(result3)
